@@ -1,0 +1,12 @@
+build-*/*
+build-*
+*-build-*
+libiconv_test/*.pro.user
+libiconv_test/*.pro.user.*
+libiconv_test/*.moc
+libiconv_test/*.bin
+libiconv_test/moc_*.cpp
+libiconv_test/qrc_*.cpp
+libiconv_test/ui_*.h
+libiconv_test/Makefile*
+libiconv_test/*-build-*
