@@ -230,7 +230,7 @@ static void print_bin(const char *cp, int len)
     }
 }
 
-int convert_str(const char *src_value, char *dest_value)
+int convert_str(const char *value)
 {
     const char		*type;
     int 			i, first = 1;
@@ -293,11 +293,23 @@ int convert_str(const char *src_value, char *dest_value)
     else{
         string_type = STR_TYPE_NONE;
     }
-    fputs("ConvertStr", stdout);
+    fputs("ConvertStr_HEX", stdout);
     fputs("=\"", stdout);
     print_bin(conv_value, -1);
     fputs("\" ", stdout);
     fputs("\n", stdout);
+    if (STR_TYPE_ASCII == string_type){
+        printf("ASCII=%s\n",conv_value);
+    }
+    else if (STR_TYPE_UTF8 == string_type){
+        printf("UTF8=%s\n",conv_value);
+    }
+    else if (STR_TYPE_GBK == string_type){
+        printf("GBK2UTF8=%s\n",conv_value);
+    }
+    else if (STR_TYPE_OTHER == string_type){
+        printf("OTHER=%s\n",conv_value);
+    }
 
     return conv_result;
 }
@@ -309,40 +321,16 @@ int main(int argc, char *argv[])
     int result = 0;
     const char gb_str[12] = {0xB2, 0xE2, 0xCA, 0xD4, 0xD6, 0xD0, 0xCE, 0xC4, 0x55, 0xC5, 0xCC, 0x00};
     const char shiftjis_str[18] = {0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA, 0x82, 0xCC, 0x41, 0x41, 0x41, 0x83, 0x65, 0x83, 0x58, 0x83, 0x67, 0x00};
-    const char input_utf8_str[17] = {
-        0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, 0xE6, 0xB5, 0x8B, 0xE8, 0xAF, 0x95, 0x55, 0xE7, 0x9B, 0x98, 0x00
+
+    const char input_utf8_str[19] = {
+        0xB3, 0xAC, 0xB3, 0xA4, 0xB3, 0xAC, 0xB3, 0xA4, 0xD6, 0xD0, 0xCE, 0xC4, 0xB2, 0xE2, 0xCA, 0xD4,
+        0xC6, 0xE6, 0x00
     };
-//    int check_gbk = is_str_gbk(gb_str);
-//    printf("is_str_gbk:%d\n",check_gbk);
-//    int check_shiftjis = is_str_shiftjis(gb_str);
-//    printf("is_str_shiftjis:%d\n",check_shiftjis);
-//    char utf8_str[CONVERT_BUFFSIZE];
-//    int str_len = strlen(gb_str);
-//    memset(utf8_str, 0x00, sizeof(utf8_str));
-//    result = convert2utf8(gb_str, utf8_str, str_len, "GBK");
-//    printf("gbk_str:");
-//    print_bin(gb_str, -1);
-//    printf("\n");
-//    printf("gbk2utf8:%d:", result);
-//    print_bin(utf8_str, -1);
-//    printf("\n");
 
-
-//    str_len = strlen(shiftjis_str);
-//    memset(utf8_str, 0x00, sizeof(utf8_str));
-//    result = convert2utf8(shiftjis_str, utf8_str, str_len, "SHIFT_JIS");
-//    printf("shiftjis_str:");
-//    print_bin(shiftjis_str, -1);
-//    printf("\n");
-//    printf("shiftjis2utf8:%d:", result);
-//    print_bin(utf8_str, -1);
-//    printf("\n");
-
-
-    result = convert_str(input_utf8_str);
     printf("input_str:");
     print_bin(input_utf8_str, -1);
     printf("\n");
+    result = convert_str(input_utf8_str);
     printf("conv_restul:%d\n", result);
     return 0;
 }
