@@ -2,6 +2,8 @@
 #include <string.h>
 #include <iconv.h>
 
+#define UNUSED(x) (void)x;
+
 #define UTF8_STR_NONE			(0)
 #define UTF8_STR_ALLASCII		(1)
 #define UTF8_STR_YES			(2)
@@ -18,7 +20,8 @@
 #define STR_TYPE_ASCII			(1)
 #define STR_TYPE_UTF8			(2)
 #define STR_TYPE_GBK			(3)
-#define STR_TYPE_OTHER			(4)
+#define STR_TYPE_SHIFTJIS		(4)
+#define STR_TYPE_OTHER			(5)
 
 #define CONVERT_BUFFSIZE		(180U)
 
@@ -45,7 +48,7 @@ static int is_str_shiftjis(const char* str)
                     nBytes = +1;
                 }
                 else if ((chr >= 0x81 && chr <= 0x9F)
-                         || (chr >= 0xE0 && chr <= 0xEF)){
+                    || (chr >= 0xE0 && chr <= 0xEF)){
                     nBytes = +2;
                 }
                 else{
@@ -131,7 +134,6 @@ static int is_str_utf8(const char* str)
     return result;
 }
 
-
 static int is_str_gbk(const char* str)
 {
     unsigned int nBytes = 0;
@@ -190,15 +192,9 @@ static int convert2utf8(const char* src, char* dest, size_t inlen, const char* f
         fputs("open_failed:", stdout);
         return -5;
     }
-    size_t res = iconv(cd, &inbuf, &inlen, &outbuf, &outlen);
+    int ret = iconv(cd, &inbuf, &inlen, &outbuf, &outlen);
     iconv_close(cd);
-
-    if (res == (size_t)(-1)){
-        return -1;
-    }
-    else{
-        return (int)res;
-    }
+    return ret;
 }
 
 char CODE[]="0123456789ABCDEF";
@@ -232,8 +228,6 @@ static void print_bin(const char *cp, int len)
 
 int convert_str(const char *value)
 {
-    const char		*type;
-    int 			i, first = 1;
     int				check_utf8 = UTF8_STR_NONE;
     int				check_gbk = GBK_STR_NONE;
     int				check_shiftjis = SHIFTJIS_STR_NONE;
@@ -249,6 +243,7 @@ int convert_str(const char *value)
         if (UTF8_STR_NONE == check_utf8){
             check_gbk = is_str_gbk(value);
             if (GBK_STR_YES == check_gbk){
+                string_type = STR_TYPE_GBK;
                 memset(conv_buffer, 0x00, sizeof(conv_buffer));
                 conv_result = convert2utf8(value, conv_buffer, conv_len, "GBK");
                 if (conv_result < 0){
@@ -265,6 +260,7 @@ int convert_str(const char *value)
             else{
                 check_shiftjis = is_str_shiftjis(value);
                 if (SHIFTJIS_STR_YES == check_shiftjis){
+                    string_type = STR_TYPE_SHIFTJIS;
                     memset(conv_buffer, 0x00, sizeof(conv_buffer));
                     conv_result = convert2utf8(value, conv_buffer, conv_len, "SHIFT_JIS");
                     if (conv_result < 0){
@@ -292,7 +288,9 @@ int convert_str(const char *value)
     }
     else{
         string_type = STR_TYPE_NONE;
+        return conv_result;
     }
+
     fputs("ConvertStr_HEX", stdout);
     fputs("=\"", stdout);
     print_bin(conv_value, -1);
@@ -305,10 +303,35 @@ int convert_str(const char *value)
         printf("UTF8=%s\n",conv_value);
     }
     else if (STR_TYPE_GBK == string_type){
-        printf("GBK2UTF8=%s\n",conv_value);
+        printf("GBK2UTF8:%d=%s\n",conv_len,conv_value);
+    }
+    else if (STR_TYPE_SHIFTJIS == string_type){
+        printf("SHIFT-JIS2UTF8:%d=%s\n",conv_len,conv_value);
     }
     else if (STR_TYPE_OTHER == string_type){
         printf("OTHER=%s\n",conv_value);
+    }
+
+    if (conv_result != CONVERT_RESULT_INIT){
+        if (conv_result >= 0){
+            if (STR_TYPE_GBK == string_type){
+                fputs("GBK2UTF8_OK\n", stdout);
+            }
+            else if (STR_TYPE_SHIFTJIS == string_type){
+                fputs("SHIFT-JIS2UTF8_OK\n", stdout);
+            }
+        }
+        else if (conv_result == CONVERT_RESULT_OPEN_FAILED){
+            fputs("ICONV_OPEN_NG\n", stdout);
+        }
+        else{
+            if (STR_TYPE_GBK == string_type){
+                fputs("GBK2UTF8_NG\n", stdout);
+            }
+            else if (STR_TYPE_SHIFTJIS == string_type){
+                fputs("SHIFT-JIS2UTF8_NG\n", stdout);
+            }
+        }
     }
 
     return conv_result;
@@ -327,9 +350,12 @@ int main(int argc, char *argv[])
         0xC6, 0xE6, 0x00
     };
 
-    printf("input_str:");
+    UNUSED(gb_str);
+    UNUSED(shiftjis_str);
+
+    printf("input_str:\"");
     print_bin(input_utf8_str, -1);
-    printf("\n");
+    printf("\"\n");
     result = convert_str(input_utf8_str);
     printf("conv_restul:%d\n", result);
     return 0;
